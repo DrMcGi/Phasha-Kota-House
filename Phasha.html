@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phasha's Kota House — Order Online</title>
+<style>
+  body{font-family:Inter,system-ui,Arial,sans-serif;margin:0;background:#fbfbfb;color:#222;}
+  header{padding:18px 16px;text-align:center;background:#fff;border-bottom:1px solid #eee;}
+  h1{margin:0;font-size:1.5rem;color:#d35400;}
+  p.tag{margin:6px 0 0;color:#777;}
+  .wrap{max-width:980px;margin:18px auto;padding:12px;}
+  .menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+  .item-card{background:#fff;border-radius:10px;padding:12px;border:1px solid #eee;display:flex;flex-direction:column;gap:8px;}
+  .item-top{display:flex;gap:10px;align-items:center;}
+  .thumb{width:72px;height:72px;border-radius:8px;background:#f2f2f2;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:0.9rem;}
+  .item-meta{flex:1;}
+  .item-meta h4{margin:0;font-size:1rem;}
+  .item-meta p{margin:6px 0 0;font-size:0.9rem;color:#777;}
+  .price{font-weight:700;color:#d35400;}
+  .controls{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:8px;}
+  .qty-controls{display:flex;align-items:center;gap:6px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;transition:0.2s;}
+  .btn:hover{background:#f8f8f8;}
+  .btn:active{transform:translateY(1px);}
+  input.qty{width:56px;text-align:center;padding:6px;border-radius:6px;border:1px solid #ddd;}
+  .sauces{display:none;margin-top:8px;padding:6px;border:1px dashed #ddd;border-radius:6px;font-size:0.9rem;background:#fff8e1;}
+  .sauces label{display:block;margin:2px 0;}
+  .sidebar{position:sticky;top:16px;}
+  .summary{background:#fff;padding:14px;border-radius:10px;border:1px solid #eee;}
+  .summary h3{margin:0 0 8px 0;}
+  .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #f0f0f0;}
+  .row:last-child{border-bottom:none;}
+  .input{width:100%;padding:8px;border-radius:6px;border:1px solid #ddd;margin-top:6px;}
+  .delivery-note{background:#ffefc1;padding:10px;border-radius:8px;margin:12px 0;text-align:center;color:#8a4b08;font-weight:600;}
+  .place-btn{width:100%;padding:14px;border-radius:12px;border:none;background:#d35400;color:#fff;font-weight:700;cursor:pointer;font-size:1.1rem;transition:0.2s;}
+  .place-btn:hover{background:#e67e22;}
+  .place-btn:disabled{opacity:0.6;cursor:not-allowed;}
+  .clear-btn{width:100%;padding:10px;border-radius:10px;border:1px solid #d35400;background:#fff;color:#d35400;font-weight:700;margin-top:6px;cursor:pointer;transition:0.2s;}
+  .clear-btn:hover{background:#f8f8f8;}
+  footer{padding:18px 16px;text-align:center;color:#777;font-size:0.9rem;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🍔 Phasha's Kota House</h1>
+  <p class="tag">Hot, fresh & packed with flavour — order for fast delivery 🚴 or quick collection 🍟</p>
+</header>
+
+<main class="wrap">
+<div class="layout">
+  <section class="menu" aria-label="Menu">
+    <div id="menuContainer"></div>
+    <div class="delivery-note" id="promo">
+      🔥 Order now — delivery in ~30 mins (within the area). Use collection for a 5% instant discount! 
+    </div>
+    <small style="color:#777;">Images coming soon — we will add mouth-watering pictures later.</small>
+  </section>
+
+  <aside class="sidebar">
+    <div class="summary">
+      <h3>Order Summary</h3>
+      <div id="orderLines" style="max-height:220px;overflow:auto"></div>
+      <div class="row"><div>Subtotal</div><div id="subtotal">R0.00</div></div>
+      <div class="row"><div>Delivery fee</div><div id="deliveryFee">R0.00</div></div>
+      <div class="row"><div>Tip (optional)</div><div><input id="tip" class="input" type="number" min="0" step="1" value="0"></div></div>
+      <div class="row" style="font-weight:700;font-size:1.05rem"><div>Total</div><div id="total">R0.00</div></div>
+      <hr style="margin:12px 0">
+      <label><strong>Your name</strong><input id="name" class="input" placeholder="John Doe" required></label>
+      <label style="margin-top:8px"><strong>Phone number</strong><input id="phone" class="input" placeholder="0811234567" required></label>
+      <label style="margin-top:8px"><strong>Order method</strong>
+        <select id="method" class="input" required>
+          <option value="">-- Select --</option>
+          <option value="Collection">Collection (pick up)</option>
+          <option value="Delivery">Delivery (to your address)</option>
+        </select>
+      </label>
+      <label style="margin-top:8px"><strong>Address (if delivery)</strong><input id="address" class="input" placeholder="Street, Area, Building" /></label>
+      <button id="placeOrder" class="place-btn" disabled>Place order via WhatsApp</button>
+      <button id="clearCart" class="clear-btn">Clear Cart</button>
+      <small style="color:#777;display:block;margin-top:8px">We will message you to confirm time and payment — cash on delivery accepted.</small>
+    </div>
+  </aside>
+</div>
+</main>
+
+<footer>Built for Phasha's Kota House · Prototype — by DrMcGi : 0649211745</footer>
+
+<script>
+const CURRENCY = 'R';
+const WHATSAPP_NUMBER = '27729759418';
+const DELIVERY_FEE_BASE = 8; // ← kept your original value
+const COLLECTION_DISCOUNT_PERCENT = 5;
+
+const menuItems = [
+  { id:'Shebeshxt', name:'Shebeshxt', price:35, desc:'Achar, Polony, Lettuce, Russian, Viana, Cheese, Egg, Chips.', category:'kota', img:'' },
+  { id:'Shandesh', name:'Shandesh', price:30, desc:'Achar, Polony, Lettuce, Russian, Viana, Chips.', category:'kota', img:'' },
+  { id:'Kharishma', name:'Kharishma', price:25, desc:'Achar, Polony, Lettuce, Half Russian, Chips.', category:'kota', img:'' },
+  { id:'Janesh', name:'Janesh', price:20, desc:'Achar, Polony, Lettuce, Viana, Chips.', category:'kota', img:'' },
+  { id:'Pleasure', name:'Pleasure', price:15, desc:'Achar, Polony, Lettuce, Chips.', category:'kota', img:'' },
+  { id:'chips-manyalo', name:'Chips - Manyalo(S)', price:15, desc:'Golden fried, crispy and salty — just right.', category:'chips', img:''},
+  { id:'chips-makompo', name:'Chips - Makompo(M)', price:20, desc:'Golden fried, crispy and salty — just right.', category:'chips', img:''},
+  { id:'chips-bareadi', name:'Chips - Bareadi(L)', price:30, desc:'Golden fried, crispy and salty — just right.', category:'chips', img:''},
+  { id:'bread-browm', name:'Brown Bread', price:15, desc:'Rakgoadi.', category:'bread', img:'' },
+  { id:'bread-mix', name:'Mix Bread', price:16, desc:'Rakgoadi.', category:'bread', img:'' },
+  { id:'Coke', name:'1.25l Coke', price:15, desc:'bring bottle or get charged for bottle R3.', category:'drink', img:'' },
+  { id:'Coke-2', name:'2l Coke', price:30, desc:'', category:'drink', img:'' }
+];
+
+const saucesList = ["Tomato Sauce","Chip Dip Sauce","BBQ Sauce","Chilli Sauce","Chips Spice","Salt","Vinegar"];
+const quantities = {};
+
+function renderMenu() {
+  const container = document.getElementById('menuContainer');
+  container.innerHTML='';
+  const categories=['kota','chips','bread','drink'];
+  const catNames={kota:'Kotas',chips:'Chips',bread:'Bread',drink:'Drinks'};
+  categories.forEach(cat=>{
+    const catItems = menuItems.filter(i=>i.category===cat);
+    if(catItems.length>0){
+      const h2=document.createElement('h2'); h2.textContent=catNames[cat]; container.appendChild(h2);
+      const grid=document.createElement('div'); grid.className='menu-grid';
+      catItems.forEach(item=>{
+        quantities[item.id]={qty:0,sauces:[]};
+        const card=document.createElement('div'); card.className='item-card';
+        card.innerHTML=`
+          <div class="item-top">
+            <div class="thumb">IMG</div>
+            <div class="item-meta">
+              <h4>${item.name} <span class="price">${CURRENCY}${item.price}</span></h4>
+              <p>${item.desc}</p>
+            </div>
+          </div>
+          <div class="controls">
+            <div class="qty-controls">
+              <button class="btn minus" data-id="${item.id}">−</button>
+              <input class="qty" type="number" min="0" value="0" id="qty_${item.id}">
+              <button class="btn plus" data-id="${item.id}">+</button>
+            </div>
+          </div>
+          <div class="sauces" id="sauces-${item.id}">
+            <b>Choose Sauces/Seasoning:</b>
+            ${saucesList.map(s=>`<label><input type="checkbox" data-id="${item.id}" value="${s}"> ${s}</label>`).join('')}
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      container.appendChild(grid);
+    }
+  });
+
+  // attach listeners for plus/minus/qty and sauce checkboxes
+  document.querySelectorAll('.plus').forEach(btn=>{btn.addEventListener('click',()=>{
+    const id=btn.dataset.id; const el=document.getElementById('qty_'+id);
+    el.value=Number(el.value)+1;
+    quantities[id].qty=Number(el.value);
+    toggleSauces(id); updateOrder();
+  });});
+  document.querySelectorAll('.minus').forEach(btn=>{btn.addEventListener('click',()=>{
+    const id=btn.dataset.id; const el=document.getElementById('qty_'+id);
+    el.value=Math.max(0,Number(el.value)-1);
+    quantities[id].qty=Number(el.value);
+    toggleSauces(id); updateOrder();
+  });});
+  document.querySelectorAll('.qty').forEach(input=>{input.addEventListener('input',()=>{
+    const id=input.id.replace('qty_','');
+    quantities[id].qty=Math.max(0,Number(input.value)||0);
+    input.value=quantities[id].qty;
+    toggleSauces(id); updateOrder();
+  });});
+
+  document.querySelectorAll('.sauces input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change',()=>{ const id=cb.dataset.id;
+      quantities[id].sauces=Array.from(document.querySelectorAll('#sauces-'+id+' input:checked')).map(i=>i.value);
+      updateOrder();
+    });
+  });
+}
+
+function toggleSauces(id){
+  const item=menuItems.find(i=>i.id===id);
+  const div=document.getElementById('sauces-'+id);
+  if(item.category==='kota' || item.category==='chips'){ div.style.display=quantities[id].qty>0?'block':'none'; }
+  else div.style.display='none';
+}
+
+function updateOrder(){
+  const ol=document.getElementById('orderLines'); ol.innerHTML='';
+  let subtotal=0;
+  menuItems.forEach(item=>{
+    const q=quantities[item.id].qty;
+    if(q>0){
+      const lineTotal=item.price*q; subtotal+=lineTotal;
+      const sauces=(quantities[item.id].sauces.length?` (with ${quantities[item.id].sauces.join(', ')})`:"");
+      const row=document.createElement('div');
+      row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='4px 0';
+      row.textContent=`${item.name}${sauces} x${q} - ${CURRENCY}${lineTotal}`;
+      ol.appendChild(row);
+    }
+  });
+
+  const method=document.getElementById('method').value;
+  let deliveryFee=(method==='Delivery' && subtotal>0?DELIVERY_FEE_BASE:0);
+  let displaySubtotal=subtotal;
+  if(method==='Collection' && COLLECTION_DISCOUNT_PERCENT>0 && subtotal>0){
+    displaySubtotal=subtotal-(subtotal*COLLECTION_DISCOUNT_PERCENT/100);
+  }
+  const tip=Number(document.getElementById('tip').value||0);
+  const total=displaySubtotal+deliveryFee+tip;
+
+  document.getElementById('subtotal').textContent=CURRENCY+displaySubtotal.toFixed(2);
+  document.getElementById('deliveryFee').textContent=CURRENCY+deliveryFee.toFixed(2);
+  document.getElementById('total').textContent=CURRENCY+total.toFixed(2);
+
+  const nameFilled=document.getElementById('name').value.trim().length>0;
+  const phoneFilled=document.getElementById('phone').value.trim().length>0;
+  const methodSelected=method!=='';
+  const addressNeeded=(method==='Delivery');
+  const addressFilled=document.getElementById('address').value.trim().length>0;
+  const hasItems=menuItems.some(i=>quantities[i.id].qty>0);
+  document.getElementById('placeOrder').disabled=!(hasItems && nameFilled && phoneFilled && methodSelected && (!addressNeeded || addressFilled));
+}
+
+// place order builds the WhatsApp message (unchanged number)
+document.getElementById('placeOrder').addEventListener('click',()=>{
+  const name=document.getElementById('name').value;
+  const phone=document.getElementById('phone').value;
+  const address=document.getElementById('address').value;
+  const method=document.getElementById('method').value;
+  const tip=document.getElementById('tip').value||0;
+
+  let message=`Order from Phasha's Kota House\nName: ${name}\nPhone: ${phone}\nMethod: ${method}\n`;
+  if(method==='Delivery') message+=`Address: ${address}\n`;
+  message+='Items:\n';
+  menuItems.forEach(item=>{
+    const q=quantities[item.id].qty;
+    if(q>0){
+      const sauces=(quantities[item.id].sauces.length?` (with ${quantities[item.id].sauces.join(', ')})`:"");
+      message+=`${q} x ${item.name}${sauces} @ ${CURRENCY}${item.price}\n`;
+    }
+  });
+  message+=`Tip: ${CURRENCY}${tip}\n`;
+  message+=`Total: ${document.getElementById('total').textContent}`;
+
+  // open WhatsApp (unchanged number)
+  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,'_blank');
+});
+
+// clear cart resets everything (keeps your original reset behavior)
+document.getElementById('clearCart').addEventListener('click',()=>{
+  menuItems.forEach(item=>{
+    quantities[item.id].qty=0; quantities[item.id].sauces=[];
+    const qtyEl = document.getElementById('qty_'+item.id);
+    if(qtyEl) qtyEl.value=0;
+    const div=document.getElementById('sauces-'+item.id);
+    if(div){ div.style.display='none'; div.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false); }
+  });
+  document.getElementById('tip').value=0;
+  document.getElementById('name').value='';
+  document.getElementById('phone').value='';
+  document.getElementById('method').value='';
+  document.getElementById('address').value='';
+  updateOrder();
+});
+
+// ---- SMALL FIX: make sure typing/changing those fields updates totals & button state immediately ----
+function attachFormListeners(){
+  ['tip','name','phone','method','address'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){
+      el.addEventListener('input', updateOrder);
+      el.addEventListener('change', updateOrder);
+    }
+  });
+}
+
+renderMenu();
+updateOrder();
+attachFormListeners();
+</script>
+</body>
+</html>
